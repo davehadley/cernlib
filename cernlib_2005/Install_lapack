@@ -1,0 +1,94 @@
+#!/bin/sh
+
+
+# Get the log file name of make_lapack
+
+CERN_ROOT=$CERN/$CERN_LEVEL
+cd $CERN_ROOT/build
+touch log/lapack.`date +%m%d`
+cd $CERN_ROOT/build/log
+logfile=`ls | grep lapack`
+
+# Install the blas and lapack in $CERN/LAPACK
+# (On x86_64 platforms this will create x86_64 binaries)
+
+cd $CERN
+gtar -zxvf $CERN/lapack.tar.gz >> $CERN_ROOT/build/log/$logfile 2>&1
+
+cd LAPACK
+mv Makefile Makefile.orig
+ed -s Makefile.orig  > /dev/null <<!
+11,12c
+#lib: lapacklib tmglib
+lib: blaslib lapacklib
+.
+w Makefile
+q
+!
+
+# Modify Lapack Make for gcc (i686 and x86_64 architectures)
+
+[ -z "$ARCH" ] && ARCH=`uname -m`
+GCCVERSION=`gcc -v 2>&1 | grep version | cut -d' ' -f3 | cut -c1`
+
+if [ "${GCCVERSION}" = "3" ]; then
+    mv make.inc make.inc.orig
+    ed -s make.inc.orig > /dev/null <<!
+41,43c
+BLASLIB      = ../../blas\$(PLAT).a
+.
+28c
+LOADOPTS = -O
+.
+26c
+LOADER   = g77
+.
+24c
+NOOPT    =
+.
+22c
+OPTS     = -O
+.
+19c
+FORTRAN  = g77
+.
+11c
+PLAT = _$ARCH
+.
+w make.inc
+q
+!
+fi
+if [ "${GCCVERSION}" = "4" ]; then
+mv make.inc make.inc.orig
+ed -s make.inc.orig > /dev/null <<!
+41,43c
+BLASLIB      = ../../blas\$(PLAT).a
+.
+28c
+LOADOPTS = -O
+.
+26c
+LOADER   = gfortran
+.
+24c
+NOOPT    = 
+.
+22c
+OPTS     = -O 
+.
+19c
+FORTRAN  = gfortran
+.
+11c
+PLAT = _$ARCH
+.
+w make.inc
+q
+!
+fi
+
+gmake lib >> $CERN_ROOT/build/log/$logfile 2>&1
+
+cd $CERN
+

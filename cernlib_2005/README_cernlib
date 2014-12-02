@@ -1,0 +1,55 @@
+
+Complete Cernlib 2005 installation with g77/gfortran
+on (i686, x86_64, ia64) architectures with Linux  OS
+====================================================
+
+
+32-bit architectures with gcc3 compiler suite:
+----------------------------------------------
+using following g77 compile flags:
+g77 -fno-automatic -fno-second-underscore -fugly-complex
+using following CERNLIB macros:
+#define CernlibSystem \
+-DCERNLIB_LINUX -DCERNLIB_UNIX -DCERNLIB_LNX -DCERNLIB_QMGLIBC \
+-DCERNLIB_GFORTRAN -DCERNLIB_GCC3
+
+64-bit architectures with gcc3 compiler suite:
+----------------------------------------------
+g77 -fno-automatic -fno-second-underscore -fugly-complex -fPIC
+using following CERNLIB macros:
+#define CernlibSystem \
+-DCERNLIB_LINUX -DCERNLIB_UNIX -DCERNLIB_LNX -DCERNLIB_QMGLIBC \
+-DCERNLIB_QMLXIA64 -DCERNLIB_GFORTRAN -DCERNLIB_GCC3
+
+32-bit architectures with gcc4 compiler suite:
+----------------------------------------------
+using following g77 compile flags:
+g77 -fno-automatic -fno-second-underscore
+using following CERNLIB macros:
+#define CernlibSystem \
+-DCERNLIB_LINUX -DCERNLIB_UNIX -DCERNLIB_LNX -DCERNLIB_QMGLIBC \
+-DCERNLIB_GFORTRAN -DCERNLIB_GCC4
+
+64-bit architectures with gcc4 compiler suite:
+----------------------------------------------
+g77 -fno-automatic -fno-second-underscore -fPIC
+using following CERNLIB macros:
+#define CernlibSystem \
+-DCERNLIB_LINUX -DCERNLIB_UNIX -DCERNLIB_LNX -DCERNLIB_QMGLIBC \
+-DCERNLIB_QMLXIA64 -DCERNLIB_GFORTRAN -DCERNLIB_GCC4
+
+
+Installation:
+-------------
+In this directory run:   ./Install_cernlib
+It will use the scripts:
+Install_cernlib_src, Install_cernlib_lib, Install_lapack,
+Install_cernlib_bin, Install_old_patchy4, Install_cernlib_patchy
+
+Installs lapack, blas, patchy4, and the cernlib libraries and binaries
+
+
+Setting the cernlib environment variables for an installation of cernlib 
+------------------------------------------------------------------------
+In this directory run: source cernlib_env
+

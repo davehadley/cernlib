@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# The cernlib environment
+
+CERN=`pwd`
+CERN_ROOT=$CERN/$CERN_LEVEL
+CVSCOSRC=$CERN/$CERN_LEVEL/src
+PATH=$CERN_ROOT/bin:$PATH
+
+export CERN
+export CERN_LEVEL
+export CERN_ROOT 
+export CVSCOSRC
+export PATH
+
+
+# Check if lapack and blas libraries are present
+
+SYSTEM=`uname -m`
+cd $CERN_ROOT/lib
+if [ -f $CERN/LAPACK/lapack_${SYSTEM}.a ] && [ -f $CERN/LAPACK/blas_${SYSTEM}.a ]; then
+  cp -p $CERN/LAPACK/blas_${SYSTEM}.a $CERN_ROOT/lib/libblas.a
+  cp -p $CERN/LAPACK/lapack_${SYSTEM}.a $CERN_ROOT/lib/liblapack3.a
+else
+  echo "The libraries blas_x86_64.a and lapack_x86_64.a are not found in $CERN/LAPACK/"
+  exit 1
+fi
+
+# Install the executables
+
+# get the log file name of start_cern
+cd $CERN_ROOT/build/log
+logfile=`ls | grep make`
+
+cd $CERN_ROOT/build/pawlib
+gmake  install.bin >> ../log/$logfile 2>&1
+cd $CERN_ROOT/build/packlib
+gmake  install.bin >> ../log/$logfile 2>&1
+
+cd $CERN
+
