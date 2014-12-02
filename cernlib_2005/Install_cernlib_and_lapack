@@ -63,16 +63,27 @@ echo "CERN_LEVEL is: "$CERN_LEVEL
 echo "======================================"
 
 
-# Fix the cernlib script (BLAS-3 and LAPACK-3 provided by the system)
-
-cp -a $CERN/cernlib.fixed $CERN/$CERN_LEVEL/src/scripts/cernlib
-
-
 # Install the cernlib libraries
 
 echo "installing cernlib libraries"
 
 ./Install_cernlib_lib
+
+
+# Install the blas and lapack libraries in $CERN
+# copy these libraries to the $CERN_ROOT/lib directory
+
+echo "installing lapack and blas libraries"
+
+./Install_lapack
+
+if [ -f ${CERN}/LAPACK/lapack_${ARCH}.a ] && [ -f ${CERN}/LAPACK/blas_${ARCH}.a ]; then
+  cp -p ${CERN}/LAPACK/blas_${ARCH}.a ${CERN}/${CERN_LEVEL}/lib/libblas.a
+  cp -p ${CERN}/LAPACK/lapack_${ARCH}.a ${CERN}/${CERN_LEVEL}/lib/liblapack3.a
+else
+  echo "The libraries blas_${ARCH}.a and lapack_${ARCH}.a are not found in ${CERN}/LAPACK/"
+  exit 1
+fi
 
 
 # Test the cernlib libraries

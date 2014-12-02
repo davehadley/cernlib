@@ -13,14 +13,14 @@ logfile=`ls | grep lapack`
 # (On x86_64 platforms this will create x86_64 binaries)
 
 cd $CERN
-gtar -zxvf $CERN/lapack.tar.gz >> $CERN_ROOT/build/log/$logfile 2>&1
+tar -zxvf $CERN/lapack.tar.gz >> $CERN_ROOT/build/log/$logfile 2>&1
 
 cd LAPACK
 mv Makefile Makefile.orig
 ed -s Makefile.orig  > /dev/null <<!
 11,12c
 #lib: lapacklib tmglib
-lib: blaslib lapacklib
+lib: blaslib lapacklib tmglib
 .
 w Makefile
 q
@@ -29,7 +29,7 @@ q
 # Modify Lapack Make for gcc (i686 and x86_64 architectures)
 
 [ -z "$ARCH" ] && ARCH=`uname -m`
-GCCVERSION=`gcc -v 2>&1 | grep version | cut -d' ' -f3 | cut -c1`
+GCCVERSION=`gcc -v 2>&1 | grep version | cut -d' ' -f3 | cut -c1 | tail -1`
 
 if [ "${GCCVERSION}" = "3" ]; then
     mv make.inc make.inc.orig
@@ -38,16 +38,16 @@ if [ "${GCCVERSION}" = "3" ]; then
 BLASLIB      = ../../blas\$(PLAT).a
 .
 28c
-LOADOPTS = -O
+LOADOPTS = -O -fPIC
 .
 26c
 LOADER   = g77
 .
 24c
-NOOPT    =
+NOOPT    = -fPIC
 .
 22c
-OPTS     = -O
+OPTS     = -O -fPIC
 .
 19c
 FORTRAN  = g77
@@ -66,16 +66,16 @@ ed -s make.inc.orig > /dev/null <<!
 BLASLIB      = ../../blas\$(PLAT).a
 .
 28c
-LOADOPTS = -O
+LOADOPTS = -O -fPIC
 .
 26c
 LOADER   = gfortran
 .
 24c
-NOOPT    = 
+NOOPT    = -fPIC
 .
 22c
-OPTS     = -O 
+OPTS     = -O -fPIC
 .
 19c
 FORTRAN  = gfortran
@@ -88,7 +88,15 @@ q
 !
 fi
 
+# use INTRINSIC ETIME
+sed -i -e '{s/EXTERNAL           ETIME/INTRINSIC          ETIME/}' SRC/dsecnd.f
+sed -i -e '{s/EXTERNAL           ETIME/INTRINSIC          ETIME/}' SRC/second.f
+
 gmake lib >> $CERN_ROOT/build/log/$logfile 2>&1
+
+# tests
+gmake blas_testing >> $CERN_ROOT/build/log/t_$logfile 2>&1
+gmake testing >> $CERN_ROOT/build/log/t_$logfile 2>&1
 
 cd $CERN
 

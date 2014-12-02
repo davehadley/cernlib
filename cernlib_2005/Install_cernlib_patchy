@@ -18,7 +18,7 @@ export CVSCOSRC
 export PATH
 
 
-echo "installing the patchy 5 executables"
+# install the executables
 logfile=make_patchy5.`date +%m%d`
 cd $CERN_ROOT/build
 gmake patchy/Makefile
