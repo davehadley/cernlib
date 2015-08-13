@@ -1,4 +1,4 @@
 
 all: 
-	cd cernlib_2005 && ls ./Install_cernlib
+	cd cernlib_2005 && ./Install_cernlib
 
