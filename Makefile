@@ -1,4 +1,4 @@
 
-all:
-	source setup.sh && cd cernlib_2005 && ./Install_cernlib
+all: 
+	cd cernlib_2005 && ls ./Install_cernlib
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #find CERNLIB directory
-if [ -z ${CERN} ]; then
+if [ -z "${CERN}" ]; then
   scriptdir=$(dirname $(readlink -f $0));
   CERN=${scriptdir}/cernlib_2005
 fi
