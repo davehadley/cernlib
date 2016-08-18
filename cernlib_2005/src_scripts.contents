@@ -1,0 +1,11 @@
+2005/src/scripts/
+2005/src/scripts/CVS/
+2005/src/scripts/CVS/Root
+2005/src/scripts/CVS/Repository
+2005/src/scripts/CVS/Entries
+2005/src/scripts/Imakefile
+2005/src/scripts/cernlib
+2005/src/scripts/cernlib_shift
+2005/src/scripts/gxint
+2005/src/scripts/paw
+/tmp/cernlib/src_scripts.tar:	 86.8% -- replaced with /tmp/cernlib/src_scripts.tar.gz

@@ -1,0 +1,332 @@
+#!/bin/sh
+##======================================================================
+##
+##@(#) PLITAR CERN Program Library distribution utility
+##@(#) $Id$
+##
+##======================================================================
+# * Call   :  plitar [ -n ] tar_options tar_files                      *
+# * Options: -n   No execution mode; print commands only               *
+# *          -T   Time tar commands                                    *
+# *                                                                    *
+# * Author: M.Marquina 91/05/25                                        *
+# * Mods       Date   Commments                                        *
+# * MARQUINA 91/06/05 Add mad and historian tar files                  *
+# *          91/06/24 Access compress under bsd4.3 on Apollo           *
+# *          91/06/27 Pack bvsl in cernlib                             *
+# *          91/08/13 Use PLIUWC environment variable to make automatic*
+# *                   customization. Translate uppercase filenames     *
+# *                   coming from an mget transfer                     *
+# *          91/11/19 Build root directories with "ver", not CERN_LEVEL*
+# *                   Reading any "Library" tarfile ( .xxx_tar(z) )    *
+# *                   Describe usage when no arguments are given       *
+# *                   Adapt to new directory tree                      *
+# *          92/03/26 Correct versioning of Products, add gks,phigs    *
+# *                   Create directories only at extraction            *
+# *          92/04/05 Add patchy                                       *
+# * G.Folger 92/06/26 Keep mkf together with cernmgr                   *
+# * G.Folger 92/07/29 correct version numbers for release of 92b       *
+# *                   Add mathlib to the cernlib set                   *
+# * G.Folger 92/07/30 Ask for version number for tar c... for packages *
+# *                   outside of /cern/(new,pro,old)                   *
+# * MARQUINA 92/07/31 Keep exported tar.Z filenames as hard links      *
+# *                   Remove APOLLO-specific execution of comp/uncomp  *
+# *          92/08/03 correct generation of cernsrc.tar.Z              *
+# * G.Folger 93/02/03 Add geant316, geant320, change level to 93b      *
+# * MARQUINA 93/02/10 remove IBM/VM hard-links                         *
+# * G.Folger 93/03/.. Change packing and unpacking to start from $CERN *
+# * G.Folger 93/10/26 Add support for gzip for packing.                *
+# * G.Folger 93/10/28 Change contents of cernmgr to mgr directory      *
+# * G.Folger 94/03/25 Split geant to share/specific; update MC version *
+# *		       numbers
+# * G.Folger 94/03/31 Add scripts/symb.links in bin to cernmgr tar file*
+# * McLaren  98/04/24 Add libpy* to mclibs                             *
+# * McLaren  99/04/20 Clean up geant321 and mclibs                     *
+# * McLaren  99/04/21 Remove libgen* and libbvsl*                      *
+# * McLaren  01/06/25 Add lapack entry. Add flukaaf.dat to geant321    *
+# *                                                                    *
+# **********************************************************************
+  SHNAME=$0 ; export SHNAME
+  grep "^##" $SHNAME
+ 
+  if [ $# -eq 0 ] ; then
+    cat <<EOI
+#
+#  Syntax: plitar [ -n ] tar_options tar_file
+#
+#  plitar combines tar+compress utilities to pack/unpack the files being
+#  part of the CERNlib distribution set; the corresponding _readme file
+#  describes the contents of each of them. Please read it beforehand.
+#  Location of tar files and the target install directory is controlled
+#  through environment variables CERN, CERN_LEVEL and PLITMP
+#
+#  Examples:
+#
+#  plitar -n xvf cernlib   "non-execute" mode to display the action
+#  plitar tvf cmz          examines the CMZ compressed-tar set
+#  plitar xvf geant        installs the GEANT compressed-tar set
+#
+EOI
+    exit 1
+  fi
+ 
+  [ -z "$CERN"       ] && CERN="/cern"
+  [ -z "$PLITMP"     ] && PLITMP="/tmp"
+ 
+#
+# === Process options of plitar
+#
+  _n=0 ; _T=""
+  while [ $# -gt 0 ]
+  do case $1 in
+    -n) _n=1      ; shift ;;
+    -T) _T="time" ; shift ;;
+     *) break             ;;
+     esac
+  done
+ 
+# === Check tar-options; only test for c, as this needs different code. Still
+# we require t or x to be there if no c is found. ANY other option is passed
+# to tar as it is
+
+ 
+  topt=$1 ; shift
+  _c=`echo $topt | awk '{ print index($1,"c") }'`
+  _t=`echo $topt | awk '{ print index($1,"t") }'`
+  _x=`echo $topt | awk '{ print index($1,"x") }'`
+ 
+  if [ $_c -eq 0 -a $_t -eq 0 -a $_x -eq 0 ] ; then
+     cat <<EOI
+
+   You MUST at least give one of the tar options t, x or c. 
+   Try again.
+
+EOI
+     exit 
+  fi
+
+#  the remaining command line arguments list the tar set(s) wanted
+ 
+  tflist="$*"
+  tplist=".tar.gz .tar.Z .tar"
+ 
+     tarcmd="$_T tar $topt "
+#                    use default compression level. -9 took 4 time the time,
+#                    and gained less than 1% additional compression (931026)
+     [ -f $PLITMP/gzip ] && cmpcmd="$_T gzip -v " || cmpcmd="$_T compress -v"
+     gunzipcmd="$_T gzip -dvc"
+     ucmpcmd="$_T uncompress -vc"
+  sys=""
+  [ -f /bin/uname ] && sys=`/bin/uname`
+  [ -f /sys5.3/bin/uname ] && sys=`/sys5.3/bin/uname`
+  if [ "$sys" = "DomainOS" ] ; then
+     cmpcmd="$_T ver bsd4.3 compress -v"
+     ucmpcmd="$_T ver bsd4.3 uncompress -vc"
+  fi
+ 
+#
+# === Reading of tar files ===================================================
+#
+ if [ $_c -eq 0 ] ; then
+     cat <<EOI
+#
+# -----------------------------------------------------------------------
+# The 2 parameters CERN and PLITMP are environment variables
+# which may be changed using setenv (in C-shell) or export (in sh,ksh)
+# -----------------------------------------------------------------------
+#
+# Tar files expected in      PLITMP=$PLITMP
+# Target directory           CERN  =$CERN
+#
+EOI
+# === Generate Library directories
+  if [ ! -d $CERN ] ; then
+     cat <<EOI
+#
+# The root directory $CERN is not available. Please create a partition
+# in your disk to place the files or run the following commands:
+#
+#    cd
+#    mkdir cern
+#    su
+#    cd /
+#    ln -s $HOME/cern cern
+#    ^D
+#
+# This will generate a subdirectory "cern" in your account with the
+# software link "/cern" which will be used to unpack the Library tar
+# files and install them.
+#
+EOI
+     exit
+  fi
+
+  if [ ! -d $PLITMP ] ; then
+     cat <<EOI
+#
+# The directory $PLITMP is not available. The input tar files are expected 
+# to be found there. Possibly the environment variable PLITMP is incorrect 
+#  ( PLITMP is now $PLITMP ).
+#
+EOI
+     exit
+  fi
+ 
+#
+# === Read all tar-files in PLITMP if none is specified...............
+#
+  cd $CERN
+
+  [ $# -eq 0 ] && tflist=`(cd $PLITMP;ls *.tar.gz *.tar.Z *.tar)`
+  for tfn in $tflist
+  do
+    tfile="$PLITMP/$tfn"
+#      _e=0 -> tfn has no extension like .tar .tar.Z 
+    _e=`echo $tfn | awk '{ print index($1,".") }'`
+    if [ $_e -eq 0 ] ; then
+      for ttype in $tplist
+      do
+        [ -f $tfile$ttype ] && break
+      done
+      tfile="$tfile$ttype"
+    else
+      ttype=`echo $tfn $_e | awk '{ print substr($1,$2) }'`
+    fi
+    [ ! -f $tfile ] && continue
+       case $tfn in
+         cernbin*) ;;
+        cernglib*) ;;
+         cernlib*) ;;
+         cernmgr*) ;;
+         cernsrc*) ;;
+           geant*) ;;
+          mclibs*) ;;
+             cmz*) ;;
+             gks*) ;;
+        historia*) ;;
+             mad*) ;;
+          patchy*) ;;
+           phigs*) ;;
+                *) echo "non-standard Library tar set $tfile" ;;
+       esac
+                      cmd=" "
+       [ "$ttype" = ".tar.gz" ] && cmd="$gunzipcmd $tfile | $tarcmd -"
+       [ "$ttype" = ".tar.Z" ] && cmd="$ucmpcmd $tfile | $tarcmd -"
+       [ "$ttype" = ".tar"   ] && cmd="$tarcmd  $tfile"
+       echo "	$cmd" ; [ $_n -eq 0 ] && eval $cmd
+  done
+#
+# === Writing of tar files ...........................................
+#
+ else
+  if [ $# -eq 0 ] ; then
+     echo "Tar set not specified" ; exit
+  fi
+  level="-"; dir="."
+  cd $CERN
+  until [ "$level" = "$dir" ] ; do
+     echo "which release level do want to pack ?"
+     echo "  new, pro,... not allowed !"
+     read level junk
+     dir=`(cd $level;pwd) | tr "/" " " | awk '{ print $NF }'`
+  done
+
+  CERN_ROOT=$CERN/$level
+
+  for tfn in $tflist
+  do
+    tar_root=$CERN
+    cd $tar_root
+    vask=0
+    case $tfn in
+      cernbin*) tdir="$level/bin" ; tset="*"                     ;;
+     cernglib*) tdir="$level/lib" ; tset="libgraf* libpaw*"      ;;
+      cernlib*) tdir="$level/lib" ;
+               tset="libkern* libpackl* libmath* libpht*"   ;;
+        lapack) tdir="$level/lib"     ;
+               tset="liblapac* libblas*"    ;;	       
+      cernmgr*) tdir="$level" 
+		tset="mgr/* bin/cernlib bin/paw bin/gxint"
+		tset="$tset bin/fcasplit bin/y*"			;;
+      cernsrc*) tdir="$level/src/car" ; tset="*"			;;
+      geant314) tdir="$level"     ;
+               tset="lib/*314.* src/car/*314.*"                      ;;
+      geant315) tdir="$level"     ;
+               tset="lib/*315.* lib/bertaf.dat src/car/*315.*"       ;;
+      geant316) tdir="$level/lib"     ;
+               tset="libgeant316.a gxint316.*"                       ;;
+      geant321) tdir="$level/lib"     ;
+               tset="libgeant321.a gxint321.* libgeant.a gxint.* fluka*"    ;;
+      geant321-share)
+		tdir="$level"
+		tset="src/car/*321* src/cmz/*321*"
+		tset="$tset lib/flukaaf.dat"
+		tset="$tset src/car/gean[a-z].* src/cmz/gean[a-z].*"
+		;;
+       mclibs*) tdir="$level" ;
+		tset="lib/libari* lib/libcoj* lib/libeur* lib/libfri*"	;
+		tset="$tset lib/libher* lib/libisa* lib/libjet* lib/libpdf*";
+		tset="$tset lib/libpho* lib/liblep* lib/libpy*";
+		tset="$tset lib/libNUtil* lib/libSpin*"	;
+		tset="$tset lib/libstdhe* lib/libPhase* lib/libFmcf*"	;
+		tset="$tset lib/coj*.dat lib/euro*.dat lib/isaj*.dat"    ;;
+          cmz*) tdir="cmz"      ; vask=1                             ;;
+          gks*) tdir="gks"      ; vask=1                             ;;
+     historia*) tdir="historian"; vask=1                             ;;
+          mad*) tdir="mad"      ; vask=1                             ;;
+       patchy*) tdir="patchy"   ; vask=1                             ;;
+        phigs*) tdir="phigs"    ; vask=1                             ;;
+             *) echo "Invalid tar set $tfile" ; continue             ;;
+    esac
+
+    while [ $vask -eq 1 ] ; do
+       echo " Which version of $tfn do you want to tar ?"
+       echo " please choose one of the following :"
+       (cd $tdir;ls -l)
+       read ver junk
+       if [ -d $tdir/$ver -a -n $ver ] ; then
+          vask=0
+          tset="$ver"
+       else
+          echo " Cannot find directory $tdir/$ver"
+          echo " please try again"
+       fi
+    done
+
+    tfile="$PLITMP/$tfn"
+    tcont="$PLITMP/$tfn.contents"
+    _e=`echo $tfn | awk '{ print index($1,".") }'`
+    [ $_e -eq 0 ] && tfile="$tfile.tar"
+    
+    tarset=""
+    if [ "$tset" = "*" ] ; then
+      tset="" 
+      tarset=$tdir
+    else
+       cd $tdir
+       for piece in $tset ; do 
+          tarset="${tarset} $tdir/${piece}"
+       done
+    fi
+    tarset=`echo $tarset | sed -e "s/\,$/}/"`
+
+    cd $tar_root
+#     this cd is duplicate, but leave it, otherwise in -n mode the test for    
+#       after cmd3 fails.
+#    cmd0="$_T cd $tar_root"
+    cmd0="cd $tar_root"
+    cmd1="$tarcmd $tfile $tarset >${tfile}make 2>&1"
+    cmd2="$_T tar tvf $tdev $tfile >${tcont} 2>&1"
+    cmd3="$cmpcmd $tfile >>${tcont} 2>&1"
+                 echo "	$cmd0" ; [ $_n -eq 0 ] && eval $cmd0
+                 echo "	$cmd1" ; [ $_n -eq 0 ] && eval $cmd1
+    cd $PLITMP ; echo "	$cmd2" ; [ $_n -eq 0 ] && eval $cmd2
+    if [ -f $tfile.gz ] ; then
+                 echo "	rm $tfile.gz"; rm $tfile.gz
+    fi
+    if [ -f $tfile.Z ] ; then
+                 echo "	rm $tfile.Z"; rm $tfile.Z
+    fi
+                 echo "	$cmd3" ; [ $_n -eq 0 ] && eval $cmd3
+  done
+ fi
