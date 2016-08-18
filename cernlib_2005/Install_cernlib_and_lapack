@@ -31,6 +31,8 @@ GCCVSN=`cpp -dM comptest.F | grep __VERSION__ | cut -d" " -f3 | cut -c 2`
 FC=" "
 [ "$GCCVSN" = "3" ]&&FC=g77
 [ "$GCCVSN" = "4" ]&&FC=gfortran
+[ "$GCCVSN" = "5" ]&&FC=gfortran
+[ "$GCCVSN" = "6" ]&&FC=gfortran
 if [ "$GCCVSN" = " " ]; then
   echo " "
   echo "====================================="
