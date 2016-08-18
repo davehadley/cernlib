@@ -546,7 +546,7 @@ char *str0dup( const char *str )
 /*
  * like strdup() but string is n characters long and not terminated
  */
-char *strndup( const char *str,
+/*char *strndup( const char *str,
               size_t len )
 {
   size_t bytes = len + 1;
@@ -559,7 +559,7 @@ char *strndup( const char *str,
   p[len] = '\0';
   return p;
 }
-
+*/
 
 /*
  * strdup() of character representation of integer n
