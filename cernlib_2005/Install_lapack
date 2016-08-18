@@ -87,6 +87,34 @@ w make.inc
 q
 !
 fi
+if [ "${GCCVERSION}" = "5" ]; then
+mv make.inc make.inc.orig
+ed -s make.inc.orig > /dev/null <<!
+41,43c
+BLASLIB      = ../../blas\$(PLAT).a
+.
+28c
+LOADOPTS = -O -fPIC
+.
+26c
+LOADER   = gfortran
+.
+24c
+NOOPT    = -fPIC
+.
+22c
+OPTS     = -O -fPIC
+.
+19c
+FORTRAN  = gfortran
+.
+11c
+PLAT = _$ARCH
+.
+w make.inc
+q
+!
+fi
 
 # use INTRINSIC ETIME
 sed -i -e '{s/EXTERNAL           ETIME/INTRINSIC          ETIME/}' SRC/dsecnd.f

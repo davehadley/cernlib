@@ -1,0 +1,24 @@
+2005/src/patchy/
+2005/src/patchy/CVS/
+2005/src/patchy/CVS/Root
+2005/src/patchy/CVS/Repository
+2005/src/patchy/CVS/Entries
+2005/src/patchy/Imakefile
+2005/src/patchy/fcasplit.F
+2005/src/patchy/nycheck.cra
+2005/src/patchy/nydiff.cra
+2005/src/patchy/nyindex.cra
+2005/src/patchy/nylist.cra
+2005/src/patchy/nymerge.cra
+2005/src/patchy/nypatchy.cra
+2005/src/patchy/nyshell.cra
+2005/src/patchy/nysynopt.cra
+2005/src/patchy/nytidy.cra
+2005/src/patchy/p5lib.cra
+2005/src/patchy/p5verify.car
+2005/src/patchy/p5verify.cra
+2005/src/patchy/patchy.car
+2005/src/patchy/yexpand.com
+2005/src/patchy/yexpand.script
+2005/src/patchy/yyexpand.com
+/tmp/cernlib/src_patchy.tar:	 78.3% -- replaced with /tmp/cernlib/src_patchy.tar.gz
