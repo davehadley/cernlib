@@ -390,6 +390,12 @@ XCOMM $XConsortium: Imake.cf,v 1.19 95/01/05 19:24:32 kaleb Exp $
 #if __GNUC__ == 4
 #undef __GNUC__
 #define GCC4
+#elif __GNUC__ == 5
+#undef __GNUC__
+#define GCC4
+#elif __GNUC__ == 6
+#undef __GNUC__
+#define GCC4
 #elif __GNUC__ == 3
 #undef __GNUC__
 #define GCC3
